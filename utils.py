@@ -1,49 +1,38 @@
-# utils.py
 from datetime import datetime, timezone
 from typing import Optional
 
 def calculate_urgency(deadline_at: Optional[datetime]) -> bool:
-    """
-    Возвращает True, если до дедлайна 3 дня или меньше (включительно).
-    Если deadline_at is None -> False.
-    Работает с aware и naive datetime (если naive, предполагает UTC).
-    """
     if deadline_at is None:
         return False
-
-    now = datetime.now(timezone.utc)
-
-    # если передан naive datetime — считаем его за UTC
+    now = datetime.now(timezone.utc)  # Получаем текущее время с учетом часового пояса
+    # Если deadline_at не содержит информацию о часовом поясе, добавляем UTC
     if deadline_at.tzinfo is None:
         deadline_at = deadline_at.replace(tzinfo=timezone.utc)
 
-    delta = deadline_at - now
-    # delta.days округляет вниз; если менее 0 — просрочено
-    return delta.days <= 3
+    # Вычисляем разницу в днях
+    time_difference = deadline_at - now
+    days_until_deadline = time_difference.days
+
+    return days_until_deadline <= 3
 
 def calculate_days_until_deadline(deadline_at: Optional[datetime]) -> Optional[int]:
-    """
-    Возвращает целое количество дней до дедлайна (может быть отрицательным),
-    или None, если дедлайна нет.
-    """
     if deadline_at is None:
         return None
 
     now = datetime.now(timezone.utc)
+
     if deadline_at.tzinfo is None:
         deadline_at = deadline_at.replace(tzinfo=timezone.utc)
 
-    delta = deadline_at - now
-    return delta.days
+    time_difference = deadline_at - now
+    return time_difference.days
 
 def determine_quadrant(is_important: bool, is_urgent: bool) -> str:
-    """
-    Возвращает квадрант матрицы Эйзенхауэра: Q1..Q4
-    """
     if is_important and is_urgent:
-        return "Q1"
-    if is_important and not is_urgent:
-        return "Q2"
-    if not is_important and is_urgent:
-        return "Q3"
-    return "Q4"
+        return "Q1"  # Важно и срочно
+    elif is_important and not is_urgent:
+        return "Q2"  # Важно, но не срочно
+    elif not is_important and is_urgent:
+        return "Q3"  # Не важно, но срочно
+    else:
+        return "Q4"  # Не важно и не срочно

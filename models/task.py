@@ -61,6 +61,16 @@ class Task(Base):
         nullable=True
     )
     
+    def days_left(self):
+        if not self.deadline_at:
+            return None
+        return (self.deadline_at.date() - datetime.utcnow().date()).days
+
+    def is_overdue(self):
+        if not self.deadline_at:
+            return False
+        return self.deadline_at.date() < datetime.utcnow().date()
+
     def __repr__(self) -> str:
         return f"<Task(id={self.id}, title='{self.title}', quadrant='{self.quadrant}')>"
     

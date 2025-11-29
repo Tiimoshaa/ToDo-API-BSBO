@@ -2,43 +2,43 @@ from fastapi import FastAPI, Depends
 from contextlib import asynccontextmanager
 from database import init_db, get_async_session
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, text
+from sqlalchemy import text
 from routers import tasks, stats
 from scheduler import start_scheduler
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Код ДО yield выполняется при ЗАПУСКЕ
     print("Запуск приложения...")
     print("Инициализация базы данных...")
-    # Создаем таблицы (если их нет)
-    await init_db()
-    print("Приложение готово к работе!")
-    yield  # Здесь приложение работает
-    print("База Данных инициализирована!")
 
+    await init_db()
+
+    print("База инициализирована!")
+
+    # 🔥 Запускаем планировщик ПЕРЕД yield
     scheduler = start_scheduler()
-    print("Приложение готово к работе")
+    print("Планировщик запущен!")
+
+    # --- точка входа приложения ---
     yield
 
-    print("Остановка приложения")
-    scheduler.shutdown()
-
-    # Код ПОСЛЕ yield выполняется при ОСТАНОВКЕ
+    # --- код закрытия ---
     print("Остановка приложения...")
+    scheduler.shutdown()
+    print("Планировщик остановлен. Приложение завершено.")
+    
 
 app = FastAPI(
     title="ToDo лист API",
-    description="API для управления задачами с использованием матрицы Эйзенхауэра",
+    description="API для управления задачами по Матрице Эйзенхауэра",
     version="2.1.0",
-    contact={
-        "name": "Тимофей",
-    },
-    lifespan=lifespan  # Подключаем lifespan
+    contact={"name": "Тимофей"},
+    lifespan=lifespan
 )
 
-app.include_router(tasks.router, prefix="/api/v2")  # подключение роутера к приложению
+app.include_router(tasks.router, prefix="/api/v2")
 app.include_router(stats.router, prefix="/api/v2")
+
 
 @app.get("/")
 async def read_root() -> dict:

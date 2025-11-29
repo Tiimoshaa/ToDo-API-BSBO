@@ -61,11 +61,12 @@ class Task(Base):
         nullable=True
     )
     
+    @property
     def days_left(self):
         if not self.deadline_at:
             return None
         return (self.deadline_at.date() - datetime.utcnow().date()).days
-
+    @property
     def is_overdue(self):
         if not self.deadline_at:
             return False

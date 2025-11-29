@@ -1,9 +1,8 @@
 # routers/tasks.py
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_
-
-from datetime import datetime
+from sqlalchemy import select, or_, func
+from datetime import datetime, date
 
 from database import get_async_session
 from models import Task
@@ -49,6 +48,25 @@ async def search_tasks(q: str, db: AsyncSession = Depends(get_async_session)):
     for t in tasks:
         t.days_left = t.days_left()
         t.is_overdue = t.is_overdue()
+
+    return tasks
+
+
+@router.get("/today", response_model=list[TaskResponse])
+async def get_tasks_due_today(
+    db: AsyncSession = Depends(get_async_session)
+):
+    today = date.today()
+    stmt = (
+        select(Task)
+        .where(
+            func.date(Task.deadline_at) == today,
+            Task.deadline_at.is_not(None)
+        )
+    )
+
+    result = await db.execute(stmt)
+    tasks = result.scalars().all()
 
     return tasks
 

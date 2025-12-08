@@ -42,6 +42,12 @@ class UserResponse(BaseModel):
         from_attributes = True
 
 
+class UserWithTasksCount(UserResponse):
+    tasks_count: int
+
+    class Config:
+        from_attributes = True
+
 
 # Схема ответа с токеном
 class Token(BaseModel):

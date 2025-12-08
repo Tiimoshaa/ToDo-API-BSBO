@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Body
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -91,3 +91,32 @@ async def get_me(
     current_user: User = Depends(get_current_user)
 ):
     return current_user
+
+
+
+@router.patch("/change-password", status_code=200)
+async def change_password(
+    old_password: str = Body(..., embed=True),
+    new_password: str = Body(..., embed=True),
+    db: AsyncSession = Depends(get_async_session),
+    current_user: User = Depends(get_current_user)
+):
+
+    result = await db.execute(select(User).where(User.id == current_user.id))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    if not verify_password(old_password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Старый пароль неверен")
+
+    # Можно добавить проверку на силу пароля (длина и т.п.)
+    if len(new_password) < 6:
+        raise HTTPException(status_code=400, detail="Новый пароль слишком короткий (минимум 6 символов)")
+
+    # Обновляем хеш пароля
+    user.hashed_password = get_password_hash(new_password)
+    await db.commit()
+    # не нужно await db.refresh(user) — возвращать не требуется
+
+    return {"message": "Пароль успешно изменён"}

@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
 
@@ -72,6 +73,18 @@ class Task(Base):
             return False
         return self.deadline_at.date() < datetime.utcnow().date()
 
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"), 
+        nullable = False,
+        index = True
+    )
+
+    owner = relationship(
+        "User",
+        back_populates="tasks"
+    )
+
     def __repr__(self) -> str:
         return f"<Task(id={self.id}, title='{self.title}', quadrant='{self.quadrant}')>"
     
@@ -86,5 +99,6 @@ class Task(Base):
             "completed": self.completed,
             "created_at": self.created_at,
             "completed_at": self.completed_at,
-            "deadline_at": self.deadline_at
+            "deadline_at": self.deadline_at,
+            "user_id": self.user_id
         }
